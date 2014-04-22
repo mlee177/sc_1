@@ -1,0 +1,211 @@
+#!/bin/env python
+import pprint
+
+from sys import getsizeof
+
+root = {}
+
+def addWord(word):
+	current = root
+
+	for char in word.strip():
+		current = current.setdefault(char,{})
+	
+	current['$'] = '$'
+
+# Simple, checks for complete, perfect matches
+#def checkWord(word):
+#	current = root
+#	for char in word.strip():
+#		current = current.get(char)
+#		if current is None: # Not a valid path, i.e. not a word
+#			return 0
+#	
+#	if current.get('$'):
+#		return word
+#	else: #input is subset of a real word, but not a word itself
+#		return 1
+		
+		
+# Assume lowercase, test for uppercase if lowercase fails.
+def checkWord2(word):
+	output = ""
+	current = root
+	for char in word.strip():
+		char = char.lower()
+		
+		# TODO: Remove repeated code somehow?
+		if current.get(char):
+			current = current.get(char)
+			output += char
+
+		elif current.get(char.upper()):
+			current = current.get(char.upper())
+			output += char.upper()
+
+		else:
+			return 0
+
+	if current.get('$'):
+		return output
+	else:
+		return 1
+
+def checkWord3(word):
+	print(word)
+	return checkWordHelper(word, root, "")
+
+
+# Start method.
+# Analyzes the first character and any subsequent repeats
+# And shoots the appropriate method.
+def checkWordHelper(remainingword, currentdict, currentoutput, checkVowel=None):
+
+	print("Remainingword {}, currentoutput {}, checkVowel {}".format(remainingword,currentoutput,checkVowel))
+	
+	
+	if len(remainingword) == 0:
+		if currentdict.get('$') :
+			return currentoutput
+		else:
+			return 1
+
+	char = remainingword[0] 
+
+	# Repeat check
+	repeatsToCheck = 0
+	if len(remainingword) > 1:
+		repeatsToCheck = 0
+		next = remainingword[repeatsToCheck+1]
+		while (next == char or next == otherCase(char))  and len(remainingword) > repeatsToCheck+1: 
+			repeatsToCheck += 1
+			next = remainingword[repeatsToCheck+1] if len(remainingword) > repeatsToCheck+1 else 0
+
+
+	# Vowel check
+	vowelsToCheck = []
+	
+	checkVowel = None if char is not checkVowel else char
+	if checkVowel is None:
+		if char.lower() in 'aeiou':
+			vowelsToCheck = [vowel for vowel in 'aeiou' if vowel is not char]
+			vowelsToCheck.append(char)
+			vowelsToCheck.reverse() # Bring original char to front
+			for vowel in vowelsToCheck:
+				newRemainingWord = (vowel * (repeatsToCheck+1)) + remainingword[repeatsToCheck+1:]
+				output = checkWordHelper(newRemainingWord,
+						currentdict, currentoutput, vowel)
+				#print("new remaining word: {} currentoutput: {} output {}".format(newRemainingWord,currentoutput,output))
+				if output is not 0 and output is not 1:
+						return output
+	
+	
+	oldDict = currentdict
+	dictStack = []
+	i = 0
+	while i < repeatsToCheck+1:
+		nextdict = currentdict.get(char)
+		if nextdict is None:
+			char = otherCase(char)
+			nextdict = currentdict.get(char)
+		if nextdict:
+			i+=1
+			currentdict = nextdict
+			dictStack.append((currentdict,char,i))
+		else:
+			break;
+		
+	
+	while len(dictStack) > 0 and len(remainingword) > repeatsToCheck:
+		(_dict,_char,_i) = dictStack.pop()
+		if checkVowel:
+			output = checkWordHelper(remainingword[repeatsToCheck+1-(_i-1):],
+					_dict, currentoutput + (_char * _i), checkVowel)
+		else:
+			output = checkWordHelper(remainingword[repeatsToCheck+1:],
+					_dict, currentoutput + (_char * _i), checkVowel)
+#		print("Popped char: {} repeatsTOCheck {} output {}".format(_char,(repeatsToCheck+1), output))
+		if output is not 0 and output is not 1:	
+			return output
+
+
+	
+	nextdict = currentdict.get(char)
+	if nextdict:	
+		return checkWordHelper(remainingword[1:len(remainingword)],
+				nextdict, currentoutput + char)
+	else:
+		char = char.upper() if char.islower() else char.lower()
+		nextdict = currentdict.get(char) 
+		if(nextdict):
+#			print("remaining: {}, current: {}".format(remainingword[1:len(remainingword)],currentoutput + char))
+			return checkWordHelper(remainingword[1:len(remainingword)],
+					nextdict, currentoutput + char)
+		else:
+			return 0
+	
+	
+def otherCase(char):
+	return char.lower() if char.isupper() else char.upper()
+# Checks for one scenario,, and then calls checkWordStart
+# which branches out again (repeats, vowels, case). 
+def checkWordFinal(remainingword, currentdict, currentoutput):
+	char = remainingword[0] 
+
+	# Try original case
+	output = checkWordHelper(remainingWord[1:len(remainingWord)],
+			current.get(char),
+			currentoutput + char)
+	if output is not None:
+		return output
+		
+
+
+# Helper function to figure out which potential operations need to be done.
+# Does not actually move forward the character "pointer", i.e. makes no progress
+def checkWordStart(remainingword, currentdict, currentoutput):
+	char = remainingword[0]
+	repeat = 0
+	next = remainingword[repeat+1]
+	while next == char or next == (char.upper if char.islower() else char.lower()):
+		repeat += 1
+		next = remainingword[repeat+1]
+	 
+	if char in 'aeiou':
+		output = checkWordVowel(char + remainingword[1:len(remainingword)],currentdict, currentoutput)
+
+
+# Creates all the branches for vowels. Gives preference to the original vowel. 
+def checkWordVowel(remainingword, currentdict, currentoutput):
+	for char in 'aeiou':
+		output = checkWordHelper(char + remainingword[1:len(remainingword)],
+				currentdict, currentoutput)
+		if output is not None:
+			return output
+	
+
+	
+if __name__ == "__main__":
+	
+	dictfilename = "wordsEn.txt"
+
+	file = open(dictfilename,'r')
+
+	for word in file:
+		addWord(word)
+			
+
+	print("Enter nothing or press Ctrl + C to end")
+	print("DEBUG: 0 = not found, 1 = word is a subset of another, but not a word itself")
+	word = input('>')
+	while len(word) > 0:
+		output = checkWord3(word)
+		if output is 0:
+			print("No suggestion (not found)")
+		elif output is 1:
+			print("No suggestion (substring)")
+		else:
+			print(output)
+
+		word = input('>')
+

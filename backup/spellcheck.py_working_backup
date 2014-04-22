@@ -1,0 +1,158 @@
+#!/bin/env Python
+
+
+import pprint
+root = {}
+debug = False
+
+# Dictionary data structure builder.
+# Just a bunch of nested dictionaries containing possible next letters.
+# '$' is treated as special -- it refers to the end of a valid word.
+def addWord(word):
+	i = 0
+	current = root
+	while i < len(word.strip()):
+		key = word[i]
+		i+=1
+		while key == word[i] and i < len(word):
+			key += word[i]
+			i += 1
+		current = current.setdefault(key,{}) 
+	current['$'] = '$'
+
+
+
+def checkWord(word):
+	print(word)
+	return checkWordHelper(word, root, "")
+
+def countCharRepeats2(word):
+	if len(word) > 1:
+		firstchar = word[0]
+		count = 1
+		next = word[count]
+		while next.lower() == firstchar.lower() and len(word) > count:
+			next = word[count]
+			count+=1
+		return count
+	elif len(word)==1:
+		return 1
+	else:
+		return 0
+
+def countCharRepeats(word):
+	if len(word) == 0:
+		return 0
+	elif len(word) == 1:
+		return 1
+	else:
+		i = 1
+		while i < len(word) and word[i-1].lower() == word[i].lower():
+			i+=1
+		return i
+
+
+def countCharRepeatsVowels(word):
+	if len(word)>1:
+		count = 0
+		while isVowel(word[count]):
+			count+=1
+
+		return count
+	elif len(word)==1 and isVowel(word):
+		return 1
+	else: 
+		return 0
+
+def isVowel(char):
+	return True if char.lower() in 'aeiou' else False
+
+def keyIsVowels(key):
+	for char in key:
+		if not isVowel(char):
+			return False
+	return True
+	
+def checkWordHelper(remainingword, currentdict, currentoutput):
+	if(debug):
+		print("HELP    rw:'{}' co:'{}'".format(remainingword,currentoutput))
+	
+	# Check end of word
+	if len(remainingword) == 0:
+		if currentdict.get('$'):
+			return currentoutput
+		else:
+			return 1 # Substring found
+	
+
+	# Building key
+	currentchar = remainingword[0]
+	count = countCharRepeats(remainingword) # 'aaab' would return 3
+	if(debug):	
+		print("count {}".format(count))
+
+	if not isVowel(currentchar):
+		for i in range(count+1): 
+			repeatedsubstring = remainingword[:count-i].lower()
+			if(repeatedsubstring):
+				for key in [(key.lower(),key) for key in currentdict.keys()]:
+					if repeatedsubstring == key[1]:
+						output = checkWordHelper(remainingword[i+len(key[1]):],currentdict.get(repeatedsubstring),
+								currentoutput + repeatedsubstring)
+						if output is not 0 and output is not 1:
+							return output
+			else:
+				return 1
+
+
+	else:
+		for i in range(count):
+			keys = [ key for key in currentdict.keys() if len(key) == count-i and keyIsVowels(key)]
+			if(debug):
+				print(keys)
+			if keys:
+				for key in keys:
+					output = checkWordHelper(remainingword[len(key):],currentdict.get(key),
+							currentoutput + key)
+					if output is not 0 and output is not 1:
+						return output
+			
+			# If no keys were found, or if the loop didn't find a valid word, decrement by one and try again.
+			output = checkWordHelper(remainingword[1:],currentdict,currentoutput)
+			if output is not 0 and output is not 1:
+				return output
+				
+
+		return 0
+	return 0
+	
+					
+
+
+
+
+if __name__ == "__main__":
+	dictfilename = "wordsEn.txt"
+
+	file = open(dictfilename,'r')
+
+	for word in file:
+		addWord(word)
+
+	print("Enter nothing or press Ctrl + C to end.")
+	if(debug):
+		print("0 = not found, 1 = substring of valid word")
+
+	word = input('>')
+	while len(word) > 0:
+		output = checkWord(word)
+		if output is 0:
+			print("No suggestion (not found)")
+		elif output is 1:
+			print("No suggestion (substring)")
+		else:
+			print(output)
+
+		word = input('>')
+
+	#pprint.pprint(root)

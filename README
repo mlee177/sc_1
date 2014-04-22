@@ -1,0 +1,271 @@
+Max Lee
+mlee177@jhu.edu
+443-600-1841
+http://www.twitch.tv/problems/spellcheck
+
+Files:
+	spellcheck.py - Primary spellchecking. Python 3.
+	badgenerator.py - Generates mistyped words. Python 3.
+	wordsEn.txt	- Text file used for dictionary.
+
+Data structure:
+	I wanted some sort of tree structure, where given a letter,
+	its children would be potential letters to make a word, i.e.
+	starting at 'e', we might have a child 'a', and that might have
+	a child 't', and that might have a child '$', giving us 'eat$', 
+	where the dollar sign ($) marks the end of a valid word.
+
+	I used nested dictionaries to accomplish something similar, 
+	except I also stored any repeats as keys instead of just single letters,
+	as this simplifies the recursive algorithm a bit. Without storing repeats,
+	i.e., having 'a' be a valid child of 'a', I believe I would have to maintain
+	a stack of dictionaries so I can traverse back up our idea of this tree.  
+	
+	Building this data structure out of a ~100k word, 1.2 MB text file
+	takes about a second on my virtual machine. 
+
+Algorithm:
+	The general idea is that each letter represents a lot of possibilties given
+	the class of errors possible. Case checking doubles the number of 
+	possibilties, while repeats for consonants multiplies the number of
+	possibilities (from that letter onward) by the number of times it repeats,
+	and vowels multiply this possibility by 5.
+
+	Vowel repeats are a nightmare -- it isn't enough to treat, for example,
+	'aaa' as a single set that reduces to one of [aeiou] repeated one to three
+	times. Instead, a single set of vowels could be interpreted in multiple ways:
+
+	'duud' -> 'did' (u was repeated)
+	'duud' -> 'deed'(u was a repeated typo)
+	'duud' -> 'died'(each u was a different typo)
+
+	Thus, the largest time consumption was checking all the cases for repeated vowels
+	in the main recursive method. This is also where words can diverge
+	quite a bit from what they were originally derived from, as vowels are shrunk 
+	or changed.
+
+	The main recursive method, checkWordHelper, takes in three parameters:
+		remainingword : Characters left to check
+		currentdict : the dictionary (aka tree node we're in, if we want to think in terms of trees)
+		currentoutput : output we've built up so far.
+
+	The idea is to handle one key (node) until we hit the end (a leaf), but we
+	have to explore multiple paths (branches) to find a valid leaf.
+
+Additional features to add if I were to continue working on this:
+	*Vowel Preference:
+		Currently, all vowels are treated as if they could become any vowel. 
+		This has the unfortunate conseqeuence that if a word has multiple possible
+		interpretations, the order given by the dictionary is preferred over the
+		original vowel. i.e., in the sample output below, you can see that "lunks"
+		has been translated to links. In the event that the original vowel is correct,
+		it really ought to be preserved, though by the specifications given this 
+		behavior is allowed (choose any correct intepretation). 
+
+		
+Sample output: 
+
+----------------
+(twitch)maxl@maxl-xubuntuvirt:~/projects/twitch$ python badgenerator.py  | python spellcheck.py
+Enter nothing or press Ctrl + C to end.
+>lunks
+links
+>LllloooONnnnKs
+links
+>extensively
+extensively
+>OoOoxxTTaANnNNsSSSeeeVvVUUULLLy
+extensively
+>vicunas
+vicunas
+>vVVVAaAACiINnniiiiSss
+vicunas
+>exceed
+exceed
+>uUUuXcCCiIiuud
+exceed
+>averments
+averments
+>IIviiiRRRmmMMooOnNNTTtTS
+averments
+>patcher
+patcher
+>pPPeEttcChhAARR
+patcher
+>glossary
+glossary
+>GgGGllLlEssSsSUrrRyyYy
+glossary
+>headspring
+headspring
+>HHhOOoOOodDddssSprRrRuUUunGG
+headspring
+>weevilly
+weevilly
+>WIUvvVaAlLLLlyYY
+weevilly
+>unrealistically
+unrealistically
+>eEeeNnnNrIEELlLOOsStTTtUUccELLlyYyy
+unrealistically
+>feminines
+feminines
+>FFFfiiMMmmoNAaAnNAaaaS
+feminines
+>imbrications
+imbrications
+>uUMMmmBBbBrrReeEcCOOoOtTteeUNSSS
+imbrications
+>monkeys
+monkeys
+>mAnNnkkKkaYYYSSS
+monkeys
+>unquestionable
+unquestionable
+>OoOnqQqeeEaAaAsssStttTeaaNNooBBBBlIi
+unquestionable
+>horizon
+horizon
+>HIiIrrruUzzzZUUuUnnn
+horizon
+>transpose
+transpose
+>TRrrRUNNsSSSPaAAsA
+transpose
+>heartiness
+heartiness
+>haeEeerRrRttTtEnOSssSSS
+heartiness
+>rushee
+roshi
+>rOosSShuii
+roshi
+>mistimed
+mistimed
+>mmmMuSSTTAAAMIiIidd
+mistimed
+>executes
+executes
+>iXXoOOoCcCooooTtTuss
+executes
+>shapeliness
+shapeliness
+>sSSHheEPPPPaaaalllOoNOoooSSssS
+shapeliness
+>fads
+fids
+>Fedds
+fids
+>charon
+charon
+>ccChHHHIIRRUn
+charon
+>imagine
+imagine
+>aAMMMUuugGaaNnni
+imagine
+>expiation
+expiation
+>iIxXxxppPPEEEIiiteanNn
+expiation
+>suggesting
+suggesting
+>SsEEggGggGUsSSsTTteeennNGG
+suggesting
+>debitable
+debitable
+>dDUBbbuuuutttuUBBbLlLAA
+debitable
+>bivalencies
+bivalencies
+>buuVUuUUllLaNNccoOoos
+bivalencies
+>nonethically
+nonethically
+>nNnNinNiiitHHhhOCCILLLLLlLYy
+nonethically
+>dilators
+dilutors
+>DdUUUULLLEttTTeeeeRsSS
+dilutors
+>licensing
+licensing
+>llLeECcCCInNNSssooOngGG
+licensing
+>contortive
+contortive
+>cCCCIIINNNnTttaaaArrrrTTTTUVvVuuuu
+contortive
+>oxen
+oxen
+>IiIxxAannn
+oxen
+>sis
+sis
+>ssaAAsSS
+sees
+>congruously
+congruously
+>cCiNnGGGGrReUuUoosLly
+congruously
+>accentuates
+accentuates
+>EECccCcCannTtTTOoOiitTTToss
+accentuates
+>coeducation
+coeducation
+>cAaOdAaacccceEEETtTToOEEN
+coeducation
+>troubleshoot
+troubleshoot
+>TTTrRRiIIieBlLllishHhhIiIaATtt
+troubleshoot
+>repeople
+repeople
+>rrRUUpPPOOoePplLaa
+repeople
+>bihourly
+bihourly
+>baAahAIiIRrLlllY
+bihourly
+>heedless
+heedless
+>hhHHIiIiIddLISssSSSs
+heedless
+>fowled
+fowled
+>ffFAaWLiiiidd
+fowled
+>gym
+gym
+>GggYMM
+gym
+>fugitives
+fugitives
+>fffAAGGOOOtOOVAaAaSs
+fugitives
+>pelletize
+pelletize
+>PPPPaaAaLllllITTteZzaaA
+pelletize
+>recurrent
+recurrent
+>rRRRaAAcCCCaAAArrrRiinnnt
+recurrent
+>shoetrees
+shoetrees
+>ssShHAAAAaaatttRrrroOUusSS
+shoetrees
+>divagating
+divagating
+>deeVvvVUUUggggITTTeEnNNGGG
+divagating
+>chucklers
+chucklers
+>CChHhhOockLllLUuRssss
+chucklers
+>etherizing
+etherizing
+>iIiItTHaaaArRrRUuuUZzunnnGgg
+etherizing
+
